@@ -48,19 +48,28 @@ input[type=number]{width:64px}input[type=text]{width:170px}
 #cm button:hover:not(:disabled){background:var(--ac2);color:var(--ac)}#cm button:disabled{opacity:.4;cursor:default}
 #cm hr{border:0;border-top:1px solid var(--bd);margin:5px 4px}
 .hint{font-size:12px;color:var(--mut);flex-basis:100%}
+.pal{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.psep{width:1px;height:38px;background:var(--bd);margin:0 4px}
+.nb{position:relative;flex-direction:column;justify-content:center;width:50px;height:56px;padding:0}
+.nb svg{width:22px;height:30px;pointer-events:none}.nb.t svg{height:24px}
+.nb kbd{position:absolute;right:3px;bottom:3px;font-size:9px;padding:2px 4px}
+#side{display:none}
+body.side #wrap{display:grid;grid-template-columns:auto minmax(0,1fr);max-width:1400px;margin:0 auto}
+body.side #side{display:block;position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--hh,56px) + var(--uh,0px) + 10px);align-self:start;margin:14px 0 0 14px;padding:8px;background:var(--pn);border:1px solid var(--bd);border-radius:14px;box-shadow:var(--sh);max-height:calc(100vh - var(--hh,56px) - var(--uh,0px) - 30px);overflow:auto}
+#side .pal{flex-direction:column;flex-wrap:nowrap}#side .psep{width:100%;height:1px;margin:2px 0}
 #st{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:30;max-width:min(94vw,980px);padding:8px 16px;border-radius:999px;background:var(--fg);color:var(--bg);font-size:12.5px;box-shadow:var(--sh);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #score{padding:22px 12px 90px;display:flex;flex-direction:column;align-items:center;gap:22px}
 svg.page{background:#fff;width:min(100%,920px);height:auto;border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,.18),0 12px 34px rgba(0,0,0,.18)}
 .hit{fill:transparent;cursor:pointer}.hit.sel{fill:rgba(79,70,229,.24)}.hit.play{fill:rgba(255,140,0,.45)}
 .mr{fill:transparent;cursor:pointer}.mr.cur{fill:rgba(79,70,229,.06)}.mr.under{fill:rgba(255,190,0,.15)}.mr.over{fill:rgba(255,60,60,.17)}
 @media (max-width:640px){header{padding:8px 10px}.logo span{display:none}#st{white-space:normal;border-radius:14px;width:94vw}}
-@media print{header,#ui,#st,#cm{display:none!important}body{background:#fff}#score{padding:0;gap:0}svg.page{box-shadow:none;border-radius:0;width:100%;page-break-after:always;break-after:page}.hit,.mr{display:none}}
+@media print{header,#ui,#st,#cm,#side{display:none!important}body{background:#fff}#score{padding:0;gap:0}svg.page{box-shadow:none;border-radius:0;width:100%;page-break-after:always;break-after:page}.hit,.mr{display:none}}
 </style>
 </head><body>
 <header><div class="logo"><i>🥁</i><span>Snare Scribe</span></div><div id="hdr" style="display:contents"></div></header>
 <div id="ui"></div>
 <div id="st"></div>
-<div id="score"></div>
+<div id="wrap"><aside id="side" aria-label="Notes toolbar"></aside><div id="score"></div></div>
 <script>
 const $=id=>document.getElementById(id),el=(t,p={},c=[])=>{const n=Object.assign(document.createElement(t),p);c.forEach(x=>n.append(x));return n};
 const mk=(ts=[4,4])=>({ts:ts.slice(),rs:0,re:0,ev:[]});
@@ -137,7 +146,7 @@ function draw(){
    if(!m.ev.length){const w=6*s*scale;out+=Rc(ex+w/2-.8*s,yt+s,1.6*s,.5*s);ex+=w}
    else{m.ev.forEach(e=>{const g=gl(e),w=g+(base(e)-g)*scale;recs.push({x0:ex,w,cx:ex+g+.95*s+(e.gh?.5*s:0)});ex+=w});out+=events(m,a,recs,yt,i)}
    const xe=ex+.9*s+(m.re?1.4*s:0),last2=last&&k==line.length-1&&i==ms.length-1,nrs=k+1<line.length&&ms[line[k+1]].rs;
-   if(m.re){out+=Rc(xe-.45*s,yt,.45*s,4*s)+Ln(xe-.8*s,yt,xe-.8*s,yt+4*s)+El(xe-1.3*s,yt+1.5*s,.2*s,.2*s,0)+El(xe-1.3*s,yt+2.5*s,.2*s,.2*s,0)}
+   if(m.re){out+=Rc(xe-.45*s,yt,.45*s,4*s)+Ln(xe-.8*s,yt,xe-.8*s,yt+4*s)+El(xe-1.3*s,yt+1.5*s,.2*s,.2*s,0)+El(xe-1.3*s,yt+2.5*s,.2*s,.2*s,0);if((m.rc||2)>2)out+=Tx(xe-.2*s,yt-.9*s,'×'+m.rc,1.5*s,'b','end')}
    else if(last2)out+=Rc(xe-.45*s,yt,.45*s,4*s)+Ln(xe-.9*s,yt,xe-.9*s,yt+4*s);
    else if(!nrs)out+=Ln(xe,yt,xe,yt+4*s);
    const cls=(fill(m)>cap(m)+EPS?'over':(m.ev.length&&fill(m)<cap(m)-EPS?'under':''))+(i>=bl&&i<=bh?' cur':'');
@@ -199,7 +208,7 @@ function move(d,ext){const M=S.ms,E=cm().ev;let{m,i}=sel;
  sel={m,i,j:null};draw();status()}
 function undoRedo(a,b){if(!a.length)return;b.push(snap());load(a.pop())}
 function msg(t){$('st').textContent=t}
-function status(){const M=cm(),b=fill(M)/(1/M.ts[1]),flags=[];if(fill(M)>cap(M)+EPS)flags.push('TOO FULL');
+function status(){const M=cm();{const r=$('rc');if(r)r.value=M.rc||2}const b=fill(M)/(1/M.ts[1]),flags=[];if(fill(M)>cap(M)+EPS)flags.push('TOO FULL');
  const e=[ent.rest?'rest':'',ent.dot?'dotted':'',ent.tup?`tuplet ${ent.tup} (adds ${ent.tup} notes)`:''].filter(Boolean).join(', ')||'normal notes';
  msg(`Measure ${sel.m+1}/${S.ms.length} [${M.ts[0]}/${M.ts[1]}] filled ${+b.toFixed(2)} of ${M.ts[0]} beats ${flags.join(' ')}  |  Entry: ${e}  |  r/l = sticking, 0 = rest, t = tuplet, p = play`)}
 
@@ -253,8 +262,8 @@ document.addEventListener('click',closeCm,true);addEventListener('scroll',closeC
 
 /* ---------- audio ---------- */
 let ac=null,NB=null,timer=null,PL=null;
-function order(start){const M=S.ms,o=[];let i=start,rs=0;for(let k=0;k<=start;k++)if(M[k].rs)rs=k;const done=new Set();let g=0;
- while(i<M.length&&g++<9999){if(M[i].rs)rs=i;o.push(i);if(M[i].re&&!done.has(i)){done.add(i);i=rs;continue}i++}return o}
+function order(start){const M=S.ms,o=[];let i=start,rs=0;for(let k=0;k<=start;k++)if(M[k].rs)rs=k;const cnt={};let g=0;
+ while(i<M.length&&g++<99999){if(M[i].rs)rs=i;o.push(i);if(M[i].re){cnt[i]=(cnt[i]||0)+1;if(cnt[i]<(M[i].rc||2)){i=rs;continue}cnt[i]=0}i++}return o}
 function timeline(start){const spw=240/S.bpm,items=[],clicks=[];let t=0;
  order(start).forEach(mi=>{const M=S.ms[mi];let p=0;M.ev.forEach((e,i)=>{items.push({t:t+p*spw,d:act(e)*spw,m:mi,i,e});p+=act(e)});
   const len=M.ev.length?p:cap(M);for(let b=0;b<M.ts[0];b++){const tc=t+b*spw/M.ts[1];if(tc<t+len*spw-1e-6)clicks.push({t:tc,a:b==0})}t+=len*spw});
@@ -286,7 +295,27 @@ function stop(){if(timer){clearInterval(timer);timer=null}if(ac){ac.close();ac=n
 /* ---------- UI ---------- */
 const btn=(t,fn,p={})=>el('button',Object.assign({innerHTML:t,onclick:()=>{fn();$('score').focus?.()}},p));
 let entBtns={};
-function tools(){entBtns.rest.classList.toggle('on',!!ent.rest);entBtns.dot.classList.toggle('on',!!ent.dot);$('tup').value=ent.tup;status()}
+function tools(){entBtns.rest.classList.toggle('on',!!ent.rest);entBtns.dot.classList.toggle('on',!!ent.dot);(entBtns.tups||[]).forEach(b=>b.classList.toggle('on',+b.dataset.n==ent.tup));status()}
+function noteIcon(d,dot){const n=d==8?1:d==16?2:d==32?3:0;let o;
+ if(d==1)o='<ellipse cx="12" cy="16" rx="7.5" ry="4.8" fill="none" stroke-width="3"/>';
+ else{o=`<ellipse cx="9" cy="24" rx="5.4" ry="3.9" transform="rotate(-22 9 24)" ${d==2?'fill="none" stroke-width="1.8"':'stroke="none"'}/><line x1="13.9" y1="23" x2="13.9" y2="4" stroke-width="1.8"/>`;
+  for(let k=0;k<n;k++)o+=`<path d="M13.9 ${4+k*5}q6 2.5 4.5 9" fill="none" stroke-width="2.2" stroke-linecap="round"/>`}
+ if(dot)o+='<circle cx="20.5" cy="24" r="1.9" stroke="none"/>';
+ return `<svg viewBox="0 0 24 32" fill="currentColor" stroke="currentColor" aria-hidden="true">${o}</svg>`}
+const restIcon='<svg viewBox="0 0 24 32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 4L8 11l7 6-6 6q6-1 7 4-6-3-8 1"/></svg>';
+const tupIcon=n=>`<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" aria-hidden="true"><path d="M3 16V9h5.5M15.5 9H21v7" fill="none" stroke-width="1.8"/><text x="12" y="15" text-anchor="middle" font-size="11" font-weight="700" stroke="none" font-family="Arial,sans-serif">${n}</text></svg>`;
+function buildPal(){const N=[[1,'Whole',1],[2,'Half',2],[4,'Quarter',3],[8,'Eighth',4],[16,'16th',5],[32,'32nd',6]],P=[];
+ N.forEach(([d,t,k])=>P.push(btn(noteIcon(d)+`<kbd>${k}</kbd>`,()=>addNote(d),{className:'nb',title:`${t} note (key ${k})`})));
+ P.push(el('span',{className:'psep'}));
+ entBtns.rest=btn(restIcon+'<kbd>0</kbd>',()=>{ent.rest^=1;tools()},{className:'nb',title:'Rest mode: the next notes you add are rests (key 0)'});
+ entBtns.dot=btn(noteIcon(4,1)+'<kbd>.</kbd>',()=>{ent.dot^=1;tools()},{className:'nb',title:'Dotted mode: the next notes you add are dotted (key .)'});
+ P.push(entBtns.rest,entBtns.dot,el('span',{className:'psep'}));
+ entBtns.tups=[3,5,6,7].map(n=>btn(tupIcon(n),()=>{ent.tup=ent.tup==n?0:n;tools()},{className:'nb t',title:`Tuplet of ${n}: the next note you add is entered as a complete group of ${n}`}));entBtns.tups.forEach((b,i)=>b.dataset.n=[3,5,6,7][i]);
+ P.push(...entBtns.tups);return el('div',{className:'pal',id:'pal'},P)}
+function setPal(mode){const side=mode=='side';document.body.classList.toggle('side',side);const pal=$('pal');
+ if(side)$('side').append(pal);else TB.panels[0].querySelector('.gb').prepend(pal);
+ TB.tabs[0].hidden=side;if(side&&TB.cur==0)TB.show(1);if(!side&&TB.cur!=0)TB.show(0);
+ const ps=$('palsel');if(ps)ps.value=side?'side':'tab';try{localStorage.setItem('ss-pal',side?'side':'tab')}catch(e){}}
 function build(){
  const hdr=$('hdr'),ui=$('ui'),B=(t,fn,c='')=>btn(t,fn,c?{className:c}:{});
  const grp=(t,...c)=>el('div',{className:'grp'},[el('div',{className:'gt',textContent:t}),el('div',{className:'gb'},c)]);
@@ -296,7 +325,7 @@ function build(){
  const hint=t=>el('div',{className:'hint',textContent:t});
  hdr.append(btn('▶ Play <kbd>p</kbd>',()=>PL?stop():play(),{id:'play',className:'primary'}),chk('Loop','loop'),chk('Metronome','metro'),
   fld('BPM',el('input',{type:'number',id:'bpm',min:30,max:300,value:S.bpm,onchange:e=>{push();S.bpm=+e.target.value||120;commit()}})),
-  el('span',{className:'grow'}),B('↶ Undo',()=>undoRedo(undo,redo)),B('↷ Redo',()=>undoRedo(redo,undo)),B('Print / PDF',()=>window.print()),
+  el('span',{className:'grow'}),btn('◧ Notes bar',()=>setPal(document.body.classList.contains('side')?'tab':'side'),{title:'Move the notes toolbar between the tabs and the left side'}),B('↶ Undo',()=>undoRedo(undo,redo)),B('↷ Redo',()=>undoRedo(redo,undo)),B('Print / PDF',()=>window.print()),
   el('details',{className:'menu'},[el('summary',{textContent:'File ▾'}),el('div',{className:'mb'},[B('Open file… <kbd>Ctrl+O</kbd>',()=>$('fi').click()),B('Save file… <kbd>Ctrl+S</kbd>',saveFile),B('New score',newScore),el('hr'),
    B('Copy score',()=>{navigator.clipboard?.writeText(snap()).then(()=>msg('Score copied to clipboard.'),()=>prompt('Copy your score:',snap()))}),
    B('Paste score',()=>{const j=prompt('Paste a score exported with “Copy score”:');if(j){try{push();load(j)}catch(e){msg('That text is not a valid score.')}}}),
@@ -306,28 +335,28 @@ function build(){
  const num=el('input',{id:'tn',type:'number',min:1,max:32,value:4}),den=el('select',{id:'td'});[2,4,8,16].forEach(v=>den.append(el('option',{value:v,textContent:v,selected:v==4})));
  const durs=[[1,'Whole',1],[2,'Half',2],[4,'Quarter',3],[8,'8th',4],[16,'16th',5],[32,'32nd',6]];
  ui.append(
-  grp('Add a note',...durs.map(([d,t,k])=>B(`${t} <kbd>${k}</kbd>`,()=>addNote(d))),el('div',{className:'hint',textContent:'Entry options:'}),entBtns.rest,entBtns.dot,ts,hint('Pick a tuplet first and the next note is entered as a complete group (a triplet adds 3 notes).')),
+  grp('Add a note',buildPal(),hint('Pick a tuplet first and the next note is entered as a complete group (a triplet adds 3 notes).')),
   grp('Decorate selected note(s)',B('Accent <kbd>a</kbd>',()=>tog('acc')),B('Ghost <kbd>g</kbd>',()=>tog('gh')),B('X head <kbd>x</kbd>',()=>tog('x')),
    seg(B('Flam <kbd>f</kbd>',()=>setv('gr',1)),B('Drag <kbd>d</kbd>',()=>setv('gr',2)),B('Ruff <kbd>u</kbd>',()=>setv('gr',3))),B('Buzz roll <kbd>z</kbd>',()=>mod(L=>{const n=(L[0].roll+1)%4;L.forEach(e=>e.roll=n)})),
    seg(B('R <kbd>r</kbd>',()=>setv('st','R','')),B('L <kbd>l</kbd>',()=>setv('st','L',''))),B('Make tuplet <kbd>t</kbd>',tupSel),
    B('Duplicate',dupNotes),B('Delete',del,'danger'),hint('Click a note to select it; Shift+click or Shift+arrows select a range. Right-click for copy / paste.')),
   grp('Bar',fld('Time',num),den,B('Set from here',()=>{push();for(let i=sel.m;i<S.ms.length;i++)S.ms[i].ts=[+num.value||4,+den.value];commit()}),
-   seg(B('|: repeat',()=>{push();cm().rs^=1;commit()}),B(':| repeat',()=>{push();cm().re^=1;commit()})),
+   seg(B('|: repeat',()=>{push();cm().rs^=1;commit()}),B(':| repeat',()=>{push();cm().re^=1;commit()})),fld('Play section ×',el('input',{type:'number',id:'rc',min:2,max:99,value:2,title:'How many times the section between |: and :| is played',onchange:e=>{push();const m=cm();m.rc=Math.max(2,Math.min(99,Math.round(+e.target.value)||2));m.re=1;commit()}})),
    seg(B('Copy',copyBars),B('Paste',()=>pasteBars('after')),B('◀ Move',()=>moveBars(-1)),B('Move ▶',()=>moveBars(1))),
    B('+ Bar',()=>{push();S.ms.push(mk(S.ms[S.ms.length-1].ts));sel={m:S.ms.length-1,i:null,j:null};commit()}),
    B('Duplicate',()=>{push();S.ms.splice(sel.m+1,0,{...JSON.parse(JSON.stringify(cm())),rs:0});sel={m:sel.m+1,i:null,j:null};commit()}),
    B('Clear',()=>{push();cm().ev=[];sel.i=null;commit()}),B('Delete bar',()=>{if(S.ms.length<2)return;push();S.ms.splice(sel.m,1);sel={m:Math.min(sel.m,S.ms.length-1),i:null,j:null};commit()},'danger')),
   grp('Score',fld('Title',el('input',{type:'text',id:'ttl',value:S.title,oninput:e=>{S.title=e.target.value;commit()}})),
-   fld('Bars per line',el('input',{type:'number',id:'mpl',min:0,max:12,value:S.mpl,onchange:e=>{push();S.mpl=+e.target.value||0;commit()}})),hint('0 = automatic. Yellow bars are not full yet; red bars are too full.')));
+   fld('Bars per line',el('input',{type:'number',id:'mpl',min:0,max:12,value:S.mpl,onchange:e=>{push();S.mpl=+e.target.value||0;commit()}})),hint('0 = automatic. Yellow bars are not full yet; red bars are too full.'),fld('Notes toolbar',el('select',{id:'palsel',onchange:e=>setPal(e.target.value)},[el('option',{value:'tab',textContent:'In the tabs'}),el('option',{value:'side',textContent:'Left side'})]))));
  $('loop').onchange=()=>{if(PL)stop()};
  document.body.append(el('input',{type:'file',id:'fi',hidden:true,accept:'.json,.snare,.txt,application/json',onchange:e=>{const f=e.target.files[0];if(f)openFile(f);e.target.value=''}}));tabify()}
 function tabify(){const ui=$('ui'),panels=[...ui.children],names=['Add notes','Decorate','Bars','Score'];
  panels.forEach(p=>{const t=p.querySelector('.gt');if(t)t.remove()});
  const tabs=names.map((t,i)=>el('button',{className:'tab',textContent:t,role:'tab',onclick:()=>show(i)}));
- const show=n=>{panels.forEach((p,i)=>{p.hidden=i!=n;tabs[i].classList.toggle('act',i==n);tabs[i].setAttribute('aria-selected',i==n)});try{localStorage.setItem('ss-tab',n)}catch(e){}};
- ui.prepend(el('div',{className:'tabs',role:'tablist'},tabs));let n=0;try{n=+localStorage.getItem('ss-tab')||0}catch(e){}show(Math.min(Math.max(n,0),panels.length-1));
- const hd=document.querySelector('header'),sy=()=>{document.documentElement.style.setProperty('--hh',hd.offsetHeight+'px');document.documentElement.style.scrollPaddingTop=(hd.offsetHeight+ui.offsetHeight+10)+'px'};
- if(window.ResizeObserver){const ro=new ResizeObserver(sy);ro.observe(ui);ro.observe(hd)}sy()}
+ const show=n=>{if(window.TB)TB.cur=n;panels.forEach((p,i)=>{p.hidden=i!=n;tabs[i].classList.toggle('act',i==n);tabs[i].setAttribute('aria-selected',i==n)});try{localStorage.setItem('ss-tab',n)}catch(e){}};
+ window.TB={tabs,show,panels,cur:0};ui.prepend(el('div',{className:'tabs',role:'tablist'},tabs));let n=0;try{n=+localStorage.getItem('ss-tab')||0}catch(e){}show(Math.min(Math.max(n,0),panels.length-1));
+ const hd=document.querySelector('header'),sy=()=>{document.documentElement.style.setProperty('--hh',hd.offsetHeight+'px');document.documentElement.style.setProperty('--uh',ui.offsetHeight+'px');document.documentElement.style.scrollPaddingTop=(hd.offsetHeight+ui.offsetHeight+10)+'px'};
+ if(window.ResizeObserver){const ro=new ResizeObserver(sy);ro.observe(ui);ro.observe(hd)}sy();let pm='tab';try{pm=localStorage.getItem('ss-pal')||'tab'}catch(e){}setPal(pm)}
 function syncInputs(){$('bpm').value=S.bpm;$('ttl').value=S.title;$('mpl').value=S.mpl}
 function tupSel(){const L=selEv();if(L.length<2&&!L.length){msg('Select several notes first (Shift+click or Shift+arrows).');return}const v=[0,3,5,6,7],n=v[(v.indexOf(L[0].tup)+1)%5];push();L.forEach(e=>e.tup=n);commit()}
 function example(){push();const E=ev,m1=mk();m1.rs=1;[...'RLRRLRLL'].forEach((c,i)=>m1.ev.push(E(8,{st:c,acc:+(i==0||i==4),gh:+[2,3,6,7].includes(i)})));
