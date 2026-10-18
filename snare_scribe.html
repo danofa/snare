@@ -31,7 +31,8 @@ input[type=number]{width:64px}input[type=text]{width:170px}
 .chip input:focus-visible+span{outline:2px solid var(--ac);outline-offset:1px}
 .menu{position:relative}.menu summary{list-style:none;cursor:pointer;height:32px;display:flex;align-items:center;padding:0 12px;border:1px solid var(--bd);border-radius:8px;background:var(--pn2)}
 .menu summary::-webkit-details-marker{display:none}.menu .mb{position:absolute;right:0;top:38px;display:flex;flex-direction:column;gap:4px;padding:8px;background:var(--pn);border:1px solid var(--bd);border-radius:12px;box-shadow:var(--sh);min-width:170px}
-#ui{max-width:1180px;margin:14px auto 0;padding:0 16px}
+#ui{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--hh,56px));z-index:15;background:var(--bg);max-width:1180px;margin:0 auto;padding:12px 16px 8px}
+@media (max-height:560px){#ui{position:static}}
 .tabs{display:flex;gap:4px;overflow-x:auto;padding:4px;background:var(--pn2);border:1px solid var(--bd);border-bottom:0;border-radius:12px 12px 0 0;width:fit-content;max-width:100%}
 .tab{border:0;background:transparent;height:30px;border-radius:8px;padding:0 16px;font-weight:600;color:var(--mut)}
 .tab:hover{color:var(--fg)}.tab.act{background:var(--pn);color:var(--ac);box-shadow:0 1px 2px rgba(0,0,0,.14)}
@@ -277,7 +278,7 @@ function play(){stop();if(!S.ms.some(m=>m.ev.length)){msg('Nothing to play yet �
   else if(now>T.total+.3){stop();return}
   const em=loop?Math.max(0,now)%T.total:now;if(em<PL.last)PL.ptr=-1;PL.last=em;let p=PL.ptr;while(p+1<T.items.length&&T.items[p+1].t<=em)p++;
   if(p!=PL.ptr&&p>=0){PL.ptr=p;const it=T.items[p];document.querySelectorAll('.hit.play').forEach(n=>n.classList.remove('play'));
-   const n=document.querySelector(`[data-k="${it.m},${it.i}"]`);if(n){n.classList.add('play');const r=n.getBoundingClientRect();if(r.top<120||r.bottom>innerHeight-20)n.scrollIntoView({block:'center',behavior:'smooth'})}}},15);
+   const n=document.querySelector(`[data-k="${it.m},${it.i}"]`);if(n){n.classList.add('play');const r=n.getBoundingClientRect();if(r.top<document.querySelector('header').offsetHeight+$('ui').offsetHeight+10||r.bottom>innerHeight-20)n.scrollIntoView({block:'center',behavior:'smooth'})}}},15);
  msg(loop?'Looping from measure '+(sel.m+1)+' … (p or Esc to stop)':'Playing from measure '+(sel.m+1)+' … (p or Esc to stop)')}
 function stop(){if(timer){clearInterval(timer);timer=null}if(ac){ac.close();ac=null}PL=null;
  const b=$('play');if(b){b.innerHTML='▶ Play <kbd>p</kbd>';b.classList.remove('on')}document.querySelectorAll('.hit.play').forEach(n=>n.classList.remove('play'))}
@@ -324,7 +325,9 @@ function tabify(){const ui=$('ui'),panels=[...ui.children],names=['Add notes','D
  panels.forEach(p=>{const t=p.querySelector('.gt');if(t)t.remove()});
  const tabs=names.map((t,i)=>el('button',{className:'tab',textContent:t,role:'tab',onclick:()=>show(i)}));
  const show=n=>{panels.forEach((p,i)=>{p.hidden=i!=n;tabs[i].classList.toggle('act',i==n);tabs[i].setAttribute('aria-selected',i==n)});try{localStorage.setItem('ss-tab',n)}catch(e){}};
- ui.prepend(el('div',{className:'tabs',role:'tablist'},tabs));let n=0;try{n=+localStorage.getItem('ss-tab')||0}catch(e){}show(Math.min(Math.max(n,0),panels.length-1))}
+ ui.prepend(el('div',{className:'tabs',role:'tablist'},tabs));let n=0;try{n=+localStorage.getItem('ss-tab')||0}catch(e){}show(Math.min(Math.max(n,0),panels.length-1));
+ const hd=document.querySelector('header'),sy=()=>{document.documentElement.style.setProperty('--hh',hd.offsetHeight+'px');document.documentElement.style.scrollPaddingTop=(hd.offsetHeight+ui.offsetHeight+10)+'px'};
+ if(window.ResizeObserver){const ro=new ResizeObserver(sy);ro.observe(ui);ro.observe(hd)}sy()}
 function syncInputs(){$('bpm').value=S.bpm;$('ttl').value=S.title;$('mpl').value=S.mpl}
 function tupSel(){const L=selEv();if(L.length<2&&!L.length){msg('Select several notes first (Shift+click or Shift+arrows).');return}const v=[0,3,5,6,7],n=v[(v.indexOf(L[0].tup)+1)%5];push();L.forEach(e=>e.tup=n);commit()}
 function example(){push();const E=ev,m1=mk();m1.rs=1;[...'RLRRLRLL'].forEach((c,i)=>m1.ev.push(E(8,{st:c,acc:+(i==0||i==4),gh:+[2,3,6,7].includes(i)})));
